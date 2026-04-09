@@ -1,195 +1,98 @@
-# EtchSpy — Etsy Product Research Chrome Extension
+# EtchSpy — Etsy Sales Research Tool
 
-Overlay estimated sales data on Etsy search results and export research to CSV.
-Sold as a one-time Gumroad purchase. License keys are validated locally — no backend required.
-
----
-
-## Quick Start
-
-### 1. Generate icons (one-time setup)
-```bash
-node create_icons.js
-```
-This creates `icons/icon16.png`, `icons/icon48.png`, and `icons/icon128.png`.  
-Replace them with professional artwork before publishing to the Chrome Web Store.
-
-### 2. Load the extension in Chrome (Developer Mode)
-1. Open Chrome and navigate to `chrome://extensions`
-2. Enable **Developer mode** (toggle in the top-right)
-3. Click **Load unpacked**
-4. Select the `EtchSpy` folder (the one containing `manifest.json`)
-5. The EtchSpy icon will appear in your Chrome toolbar
-
-### 3. Test it
-- Navigate to `https://www.etsy.com/search?q=candles` — badges should appear on each listing card
-- Click the 📊 FAB button at the bottom-right to export results
-- Click the **+** button on any card to save it to your Research List
-- Open the extension popup to view saved products and the Settings tab
+> See estimated monthly sales and revenue on every Etsy listing. No guessing. No spreadsheets. Just numbers on the page.
 
 ---
 
-## Adding New License Keys
+## What is EtchSpy?
 
-Customers buy on Gumroad → you generate a key → they enter it once in the extension.
+EtchSpy is a Chrome extension that overlays estimated sales data directly onto Etsy search results while you browse. Every listing card gets a badge showing roughly how many units it sells per month and how much revenue it's generating. Open any individual product page and you get a full breakdown — total sales, monthly sales, revenue, listing age, tags, favorites, and more.
 
-### Step 1 — Generate keys
-```bash
-node generate_keys.js 10    # generates 10 keys
-node generate_keys.js 1     # generates 1 key
-```
-Output includes the keys in copy-paste format for `license.js`.
-
-### Step 2 — Add keys to the extension
-Open `license.js` and add each key to the `VALID_KEYS` array:
-```js
-const VALID_KEYS = [
-  "ETCH-AB3D-7MNP-Q2RK",
-  "ETCH-XY9Z-KF4V-W8GH",
-  // ...
-];
-```
-
-### Step 3 — Re-package and re-upload
-1. Zip the entire `EtchSpy` folder (everything including `manifest.json` at the root of the zip)
-2. Upload the new zip to your Gumroad product page as a replacement download
-3. Existing customers who re-download will get the updated version with their key already valid
-
-> **Tip:** Keep a local spreadsheet mapping key → customer email so you can revoke
-> specific keys by removing them from the array in the next update.
+It's built for Etsy sellers and researchers who want to validate niches, spy on competitors, and find winning products — without manually digging through hundreds of listings.
 
 ---
 
-## Updating Selectors When Etsy Changes Their Layout
+## Features
 
-Etsy occasionally updates their DOM structure. EtchSpy logs which selector it used to the
-browser console, so debugging is fast.
+**On Etsy search results**
+- Sales and revenue badge on every listing card — see `~42 sales/mo · ~$630/mo` at a glance
+- Sponsored listings automatically detected and flagged so they don't skew your data
+- Save any listing to your Research List with one click
+- Export the entire page to CSV instantly
+- Price range and average price shown at the top of your results
+- Top recurring keywords extracted from listing titles — click any to copy
 
-### Find the broken selector
-1. Open DevTools (F12) on an Etsy search page
-2. Check the Console for `[EtchSpy] selector hit:` messages
-3. If no messages appear, all selectors failed → look at the DOM manually
+**On individual listing pages**
+- Full analysis panel injected below the product images
+- Est. total sales, monthly sales, monthly revenue
+- Listing age, review count, star rating, favorites count
+- All product tags displayed in one place
+- Add to Research List or export directly from the panel
 
-### Fix it
-1. Open `content_etsy_search.js`
-2. Find the `SEL` object near the top
-3. Add the new working selector at the **start** of the relevant array (highest priority)
+**In the popup dashboard**
+- **Research List tab** — all your saved products in one table, sortable by any column, exportable to CSV anytime
+- **Current Page tab** — live table of every listing on your current search page, with price range stats and a 🔥 high-opportunity signal when 3+ products are earning $500+/mo
+- **Settings tab** — manage your license key
 
-```js
-const SEL = {
-  cards: [
-    '[data-new-etsy-attribute]',   // ← add new selector at the top
-    '[data-search-results-lg-card]',
-    'li[data-listing-id]',
-    // ... existing fallbacks remain
-  ],
-};
-```
-
-4. Repeat for `content_etsy_listing.js` → `SEL` object if listing pages broke
-5. Re-load the unpacked extension in `chrome://extensions` (click the ↺ refresh icon)
+**CSV Export**
+Every export produces a clean `.csv` file with: title, shop name, price, estimated total sales, estimated monthly sales, estimated monthly revenue, review count, listing age, and listing URL. Opens perfectly in Excel and Google Sheets.
 
 ---
 
-## Project Structure
+## How the estimates work
 
-```
-EtchSpy/
-├── manifest.json               Chrome extension manifest (MV3)
-├── background.js               Service worker — message relay, tab tracking
-├── storage.js                  chrome.storage.local helpers (shared module)
-├── license.js                  License key validation (shared module)
-├── csv_export.js               CSV generation + download (shared module)
-├── content_etsy_search.js      Injected on etsy.com/search* pages
-├── content_etsy_listing.js     Injected on etsy.com/listing/* pages
-├── popup.html                  Extension popup UI
-├── popup.css                   Popup styles
-├── popup.js                    Popup controller
-├── styles/
-│   └── overlay.css             Styles injected into Etsy pages
-├── icons/
-│   ├── icon16.png              Generated by create_icons.js
-│   ├── icon48.png
-│   └── icon128.png
-├── create_icons.js             Node.js helper — generates icon PNGs (run once)
-└── generate_keys.js            Node.js helper — generates license keys
-```
+EtchSpy uses the industry-standard assumption that roughly **4% of Etsy buyers leave a review**. So a listing with 200 reviews has an estimated 5,000 total sales. Divide by the listing age and you get monthly sales. Multiply by price and you get monthly revenue.
+
+These are estimates — not guarantees — but it's the same methodology serious Etsy researchers use manually, done automatically for every listing on the page.
 
 ---
 
-## Sales Estimation Methodology
+## Getting started
 
-| Metric | Formula |
-|---|---|
-| Est. Total Sales | `review_count / 0.04` (industry assumption: ~4% of buyers review) |
-| Est. Monthly Sales | `est_total_sales / listing_age_months` |
-| Est. Monthly Revenue | `est_monthly_sales × price` |
+### 1. Buy a license
+Get EtchSpy at **[medbadria.gumroad.com/l/fkmhmq](https://medbadria.gumroad.com/l/fkmhmq)**  
+You'll receive a license key in your receipt immediately after purchase.
 
-These are **estimates only** — they reflect industry averages and will vary by niche.
-Present them clearly as estimates in any marketing copy.
+### 2. Download and install
+1. Download the zip from Gumroad and unzip it anywhere on your computer
+2. Open Chrome and go to `chrome://extensions`
+3. Turn on **Developer mode** (toggle in the top-right corner)
+4. Click **Load unpacked** and select the `EtchSpy` folder
+5. The EtchSpy icon appears in your Chrome toolbar
 
----
+### 3. Activate your license
+1. Click the EtchSpy icon in your toolbar
+2. Go to the **Settings** tab
+3. Paste your license key and click **Activate**
+4. Done — you're fully unlocked, forever
 
-## Free Trial
-
-Users get **3 search-page analyses** before being prompted to purchase.
-Trial usage is tracked in `chrome.storage.local` under the key `analysis_count`.
-Individual listing-page views do **not** consume trial credits.
-
-To change the limit: edit `FREE_TRIAL_LIMIT = 3` in both:
-- `content_etsy_search.js`
-- `popup.js`
-
----
-
-## Configuring Your Gumroad & Support Links
-
-Before distributing, update these two constants:
-
-**`background.js`** line 5:
-```js
-const GUMROAD_URL = 'https://gumroad.com/l/your-actual-product-slug';
-```
-
-**`popup.js`** lines 6–7:
-```js
-const GUMROAD_URL   = 'https://gumroad.com/l/your-actual-product-slug';
-const SUPPORT_EMAIL = 'hello@yourdomain.com';
-```
+### 4. Start researching
+Go to `etsy.com`, search for any product, and the badges appear automatically on every listing.
 
 ---
 
-## Submitting to the Chrome Web Store
+## Free trial
 
-1. **Replace placeholder icons** — design proper 16/48/128px PNG icons
-2. **Remove the template key** from `license.js` if you left `ETCH-XXXX-XXXX-XXXX` in
-3. **Update the Gumroad URL** (see above)
-4. Zip the folder: the `manifest.json` must be at the root of the zip (not inside a subfolder)
-5. Go to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
-6. Pay the one-time $5 developer fee if you haven't already
-7. Click **New Item** → upload the zip
-8. Fill in the store listing (description, screenshots, category: "Productivity")
-9. Submit for review (typically 1–3 business days)
-
-> **Privacy policy requirement:** The Web Store requires a privacy policy URL.
-> Even a simple one-pager stating you collect no personal data and store only
-> the license key locally will satisfy this requirement.
+Not sure yet? You get **3 full search-page analyses** before a license is required — no key needed, just install and go.
 
 ---
 
-## Troubleshooting
+## Screenshots
 
-| Symptom | Fix |
-|---|---|
-| Badges don't appear | Open DevTools Console — look for `[EtchSpy]` errors. Check if selectors need updating. |
-| "Couldn't read this page" banner | Etsy updated their DOM. Follow the selector update steps above. |
-| License key not accepted | Make sure the key is in `VALID_KEYS` in `license.js` and the extension has been reloaded. |
-| Popup shows no current-page data | Make sure you're on `etsy.com/search*` and the page has fully loaded. Click Refresh. |
-| Extension won't load | Check `chrome://extensions` for error details. Usually a JSON syntax error in `manifest.json`. |
+> *Coming soon*
 
 ---
 
-## License
+## Support
 
-This extension source code is for your personal use as the developer/seller.
-Do not redistribute the source code.
+Questions or issues? Email: **med.badri86@gmail.com**
+
+Response time is usually within 24 hours.
+
+---
+
+## License & legal
+
+EtchSpy is a one-time purchase. Your key works forever with no subscription or renewal fees.
+
+*EtchSpy is an independent tool and is not affiliated with or endorsed by Etsy, Inc.*
