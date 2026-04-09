@@ -1,0 +1,22 @@
+# Distribution zips
+*.zip
+*.crx
+
+# OS clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor folders
+.vscode/
+.idea/
+
+# Node (helper scripts only — not part of the extension)
+node_modules/
+
+# Claude Code internal files
+.claude/
+
+# Local notes
+*.log
+notes.txt

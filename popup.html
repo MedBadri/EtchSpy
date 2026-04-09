@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EtchSpy</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="header-icon">🔍</span>
+      <span class="header-title">EtchSpy</span>
+    </div>
+    <span class="header-version">v1.1.0</span>
+  </header>
+
+  <!-- ── License Gate (shown when trial is over and no valid key) ─────── -->
+  <div id="license-gate" class="license-gate hidden">
+    <div class="gate-icon">🔒</div>
+    <h2 class="gate-heading">Unlock EtchSpy</h2>
+    <p class="gate-subtext">Your free trial has ended.<br>Enter a license key or buy to continue.</p>
+
+    <div class="gate-input-row">
+      <input
+        type="text"
+        id="gate-key-input"
+        class="input"
+        placeholder="ETCH-XXXX-XXXX-XXXX"
+        spellcheck="false"
+        autocomplete="off"
+      >
+    </div>
+    <div id="gate-feedback" class="feedback hidden"></div>
+
+    <button id="gate-activate-btn" class="btn btn--primary btn--full">Activate Key</button>
+    <button id="gate-buy-btn"      class="btn btn--buy    btn--full">🛒 Buy on Gumroad →</button>
+  </div>
+
+  <!-- ── Main content (shown when licensed or within free trial) ────────── -->
+  <div id="main-content" class="hidden">
+
+    <!-- Trial banner (only visible during trial) -->
+    <div id="trial-banner" class="trial-banner hidden">
+      <span id="trial-remaining-text"></span>
+      <button id="trial-buy-btn" class="btn btn--buy btn--sm">Buy Now →</button>
+    </div>
+
+    <!-- Tabs -->
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="tab-research"  role="tab" aria-selected="true">Research List</button>
+      <button class="tab-btn"        data-tab="tab-current"   role="tab" aria-selected="false">Current Page</button>
+      <button class="tab-btn"        data-tab="tab-settings"  role="tab" aria-selected="false">Settings</button>
+    </nav>
+
+    <!-- ── Tab 1: Research List ────────────────────────────────────────── -->
+    <section id="tab-research" class="tab-panel active" role="tabpanel">
+      <div class="panel-toolbar">
+        <button id="export-research-btn" class="btn btn--primary btn--sm">⬇ Export CSV</button>
+        <button id="clear-research-btn"  class="btn btn--ghost   btn--sm">🗑 Clear All</button>
+      </div>
+
+      <div id="research-empty" class="empty-state hidden">
+        <div class="empty-icon">📋</div>
+        <p>No products saved yet.</p>
+        <p class="text-secondary">Browse Etsy and click <strong>+</strong> on any listing to save it here.</p>
+      </div>
+
+      <div id="research-table-wrap" class="table-wrap hidden">
+        <table class="data-table" id="research-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Price</th>
+              <th>Est. Sales/mo</th>
+              <th>Est. Rev/mo</th>
+              <th>Shop</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="research-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Tab 2: Current Page ─────────────────────────────────────────── -->
+    <section id="tab-current" class="tab-panel" role="tabpanel">
+      <div class="panel-toolbar">
+        <button id="export-page-btn"   class="btn btn--primary btn--sm">⬇ Export CSV</button>
+        <button id="refresh-page-btn"  class="btn btn--ghost   btn--sm">↺ Refresh</button>
+      </div>
+
+      <div id="current-opportunity-banner" class="opportunity-banner hidden">
+        🔥 <strong>High opportunity niche</strong> — 3+ products earning $500+/mo
+      </div>
+
+      <div id="current-not-etsy" class="empty-state hidden">
+        <div class="empty-icon">🔎</div>
+        <p>Navigate to an Etsy search page</p>
+        <p class="text-secondary">EtchSpy will analyse the results automatically.</p>
+      </div>
+
+      <div id="current-no-results" class="empty-state hidden">
+        <div class="empty-icon">⏳</div>
+        <p>No results yet.</p>
+        <p class="text-secondary">Make sure the page has finished loading, then click Refresh.</p>
+      </div>
+
+      <div id="current-table-wrap" class="table-wrap hidden">
+        <div class="current-meta-bar">
+          <span id="current-result-count" class="result-count"></span>
+          <span id="current-price-stats" class="price-stats"></span>
+        </div>
+        <table class="data-table" id="current-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Price</th>
+              <th>Est. Sales/mo</th>
+              <th>Est. Rev/mo</th>
+              <th>Reviews</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="current-tbody"></tbody>
+        </table>
+        <div id="current-top-tags" class="top-tags-section hidden">
+          <div class="top-tags-header">🏷 Top Keywords <span class="top-tags-hint">(click to copy)</span></div>
+          <div id="current-tags-list" class="tags-pills"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Tab 3: Settings ─────────────────────────────────────────────── -->
+    <section id="tab-settings" class="tab-panel" role="tabpanel">
+
+      <div class="settings-section">
+        <h3 class="settings-heading">License</h3>
+        <div id="license-status-display" class="license-status"></div>
+
+        <div class="input-row">
+          <input
+            type="text"
+            id="license-input"
+            class="input"
+            placeholder="ETCH-XXXX-XXXX-XXXX"
+            spellcheck="false"
+            autocomplete="off"
+          >
+          <button id="activate-license-btn" class="btn btn--primary btn--sm">Activate</button>
+        </div>
+        <div id="license-feedback" class="feedback hidden"></div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-heading">About</h3>
+        <p class="text-secondary">EtchSpy v1.1.0 — Etsy Product Research Tool</p>
+        <p class="text-secondary" style="margin-top:4px">
+          <a id="support-link" href="#" class="link">✉ Contact Support</a>
+        </p>
+        <p class="text-secondary" style="margin-top:4px">
+          <a id="gumroad-link" href="#" class="link">🛒 Buy / Upgrade on Gumroad</a>
+        </p>
+      </div>
+
+    </section>
+  </div><!-- /#main-content -->
+
+  <!-- Scripts — order matters: dependencies first -->
+  <script src="storage.js"></script>
+  <script src="license.js"></script>
+  <script src="csv_export.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

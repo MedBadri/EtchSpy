@@ -1,0 +1,278 @@
+/* overlay.css — styles injected into Etsy pages by EtchSpy content scripts */
+/* All class names are prefixed with "etchspy-" to avoid collisions with Etsy's styles */
+
+/* ── Search result badge ──────────────────────────────────────────────────────
+   Sits over the bottom-left of each product image. */
+.etchspy-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 3px 7px;
+  border-radius: 4px;
+  pointer-events: none;        /* don't intercept clicks on the listing card */
+  z-index: 10;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.1px;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* ── "Ad" tag on sponsored search cards ──────────────────────────────────────
+   Sits top-left of the listing card, above the image. */
+.etchspy-ad-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(185, 28, 28, 0.85);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 3px;
+  z-index: 20;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  pointer-events: none;
+}
+
+/* ── "+" Save button ─────────────────────────────────────────────────────────
+   Top-right corner of each listing card. */
+.etchspy-save-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  background: rgba(245, 100, 0, 0.9);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  transition: background 0.15s, transform 0.1s;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.etchspy-save-btn:hover  { transform: scale(1.12); }
+.etchspy-save-btn.saved  { background: rgba(16, 185, 129, 0.9); }
+
+/* ── Floating Action Button ──────────────────────────────────────────────────
+   Fixed at bottom-right of the search results page. */
+#etchspy-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #F56400;
+  color: #fff;
+  border: none;
+  border-radius: 28px;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 99999;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  transition: transform 0.15s, box-shadow 0.15s;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.1px;
+}
+#etchspy-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+}
+#etchspy-fab:active { transform: translateY(0); }
+
+/* ── Notification banners ────────────────────────────────────────────────────
+   Thin top-of-page banners for errors and upgrade prompts. */
+.etchspy-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99998;
+  padding: 8px 40px 8px 16px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.etchspy-banner--error   { background: #FEE2E2; color: #991B1B; border-bottom: 1px solid #FECACA; }
+.etchspy-banner--upgrade { background: #FFF7ED; color: #92400E; border-bottom: 1px solid #FED7AA; }
+.etchspy-banner--info    { background: #EFF6FF; color: #1E40AF; border-bottom: 1px solid #BFDBFE; }
+.etchspy-banner-close {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: inherit;
+  opacity: 0.6;
+  padding: 2px 6px;
+}
+.etchspy-banner-close:hover { opacity: 1; }
+
+/* ── Listing page panel ──────────────────────────────────────────────────────
+   Injected below the buy-box on individual listing pages. */
+#etchspy-listing-panel {
+  margin: 20px auto;
+  max-width: 700px;
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #222222;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  position: relative;
+  z-index: 100;
+}
+
+.etchspy-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #F56400;
+  color: #fff;
+}
+.etchspy-panel-logo {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+.etchspy-bestseller-badge {
+  background: rgba(255,255,255,0.22);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.etchspy-panel-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.1s;
+  line-height: 1;
+}
+.etchspy-panel-close:hover { background: rgba(255,255,255,0.15); }
+
+.etchspy-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1px;
+  background: #E5E7EB;
+  border-bottom: 1px solid #E5E7EB;
+}
+.etchspy-panel-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: #ffffff;
+}
+.etchspy-panel-stat--highlight { background: #FFF7ED; }
+.etchspy-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #6B7280;
+}
+.etchspy-stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #222222;
+}
+.etchspy-panel-stat--highlight .etchspy-stat-value { color: #F56400; }
+.etchspy-panel-new-listing {
+  grid-column: 1 / -1;
+  padding: 14px;
+  background: #F9FAFB;
+  color: #6B7280;
+}
+
+.etchspy-panel-tags {
+  padding: 10px 14px;
+  border-bottom: 1px solid #E5E7EB;
+}
+.etchspy-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.etchspy-tag {
+  background: #F3F4F6;
+  color: #374151;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+.etchspy-secondary { color: #9CA3AF; font-size: 12px; }
+
+.etchspy-panel-footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #FAFAFA;
+}
+.etchspy-btn-primary {
+  background: #F56400;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.etchspy-btn-primary:hover    { opacity: 0.88; }
+.etchspy-btn-primary:disabled { opacity: 0.55; cursor: default; }
+.etchspy-btn-secondary {
+  background: transparent;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.etchspy-btn-secondary:hover { border-color: #F56400; color: #F56400; }
+
+/* ── Disclaimer line at bottom of listing panel ─────────────────────────────*/
+.etchspy-panel-disclaimer {
+  padding: 7px 14px;
+  font-size: 10px;
+  color: #9CA3AF;
+  background: #FAFAFA;
+  border-top: 1px solid #F3F4F6;
+  font-style: italic;
+  text-align: center;
+  line-height: 1.4;
+}

@@ -1,0 +1,371 @@
+/* popup.css — EtchSpy popup UI styles */
+
+/* ── Reset & base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #222222;
+  background: #ffffff;
+  width: 420px;
+  min-height: 100px;
+  max-height: 600px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Utility ────────────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.text-secondary { color: #6B7280; }
+.link { color: #F56400; text-decoration: none; }
+.link:hover { text-decoration: underline; }
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #E5E7EB;
+  background: #fff;
+  flex-shrink: 0;
+}
+.header-brand { display: flex; align-items: center; gap: 6px; }
+.header-icon  { font-size: 18px; }
+.header-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #F56400;
+  letter-spacing: -0.3px;
+}
+.header-version { font-size: 11px; color: #9CA3AF; }
+
+/* ── License gate ───────────────────────────────────────────────────────────── */
+.license-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 20px;
+  gap: 10px;
+  text-align: center;
+}
+.gate-icon    { font-size: 36px; }
+.gate-heading { font-size: 18px; font-weight: 700; color: #222; }
+.gate-subtext { font-size: 13px; color: #6B7280; line-height: 1.5; }
+.gate-input-row { width: 100%; }
+
+/* ── Trial banner ───────────────────────────────────────────────────────────── */
+.trial-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFF7ED;
+  border-bottom: 1px solid #FED7AA;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: #92400E;
+  flex-shrink: 0;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #E5E7EB;
+  flex-shrink: 0;
+  background: #fff;
+}
+.tab-btn {
+  flex: 1;
+  padding: 9px 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6B7280;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover  { color: #F56400; }
+.tab-btn.active { color: #F56400; border-bottom-color: #F56400; font-weight: 600; }
+
+/* ── Tab panels ──────────────────────────────────────────────────────────────── */
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 490px; /* 600 total - header - tabs - potential banner */
+}
+.tab-panel.active { display: flex; }
+
+/* ── Panel toolbar ───────────────────────────────────────────────────────────── */
+.panel-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #E5E7EB;
+  flex-shrink: 0;
+  background: #FAFAFA;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  transition: opacity 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:not(:disabled):hover { opacity: 0.88; }
+
+.btn--primary { background: #F56400; color: #fff; }
+.btn--ghost   { background: transparent; color: #374151; border: 1px solid #D1D5DB; }
+.btn--buy     { background: #1a1a1a; color: #fff; }
+.btn--full    { width: 100%; }
+.btn--sm      { padding: 5px 10px; font-size: 11px; }
+
+/* ── Input ───────────────────────────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #222;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input:focus { border-color: #F56400; }
+
+.input-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+.input-row .input { flex: 1; }
+
+/* ── Feedback ────────────────────────────────────────────────────────────────── */
+.feedback {
+  font-size: 12px;
+  padding: 5px 0;
+  border-radius: 4px;
+}
+.feedback--success { color: #10B981; }
+.feedback--error   { color: #EF4444; }
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  gap: 6px;
+  text-align: center;
+  color: #6B7280;
+}
+.empty-icon { font-size: 32px; margin-bottom: 4px; }
+.empty-state p { font-size: 13px; }
+
+/* result-count is now inside .current-meta-bar — defined in that block above */
+
+/* ── Data table ──────────────────────────────────────────────────────────────── */
+.table-wrap {
+  overflow-y: auto;
+  flex: 1;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  background: #F9FAFB;
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #E5E7EB;
+  white-space: nowrap;
+}
+.data-table tbody tr { border-bottom: 1px solid #F3F4F6; }
+.data-table tbody tr:last-child { border-bottom: none; }
+.data-table tbody tr:hover { background: #FFF7ED; }
+.data-table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+  color: #222;
+}
+.data-table td.title-cell {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-table td.title-cell a {
+  color: #222;
+  text-decoration: none;
+}
+.data-table td.title-cell a:hover { color: #F56400; text-decoration: underline; }
+.data-table td.num-cell { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table td.action-cell { text-align: center; width: 28px; }
+
+/* ── Current page meta bar (count + price stats on one line) ─────────────── */
+.current-meta-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 12px;
+  border-bottom: 1px solid #E5E7EB;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.result-count { font-size: 11px; color: #6B7280; }
+.price-stats  { font-size: 11px; color: #6B7280; white-space: nowrap; }
+
+/* ── Ad badge (inline pill next to title) ────────────────────────────────── */
+.ad-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: #FEE2E2;
+  color: #B91C1C;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: middle;
+  line-height: 1.6;
+}
+.row-ad { opacity: 0.75; }
+.row-ad:hover { opacity: 1; }
+
+/* ── Dimmed cell (New / —) ───────────────────────────────────────────────── */
+.dim-cell { color: #9CA3AF; }
+
+/* ── Top keywords section ────────────────────────────────────────────────── */
+.top-tags-section {
+  padding: 10px 12px 12px;
+  border-top: 1px solid #E5E7EB;
+  background: #FAFAFA;
+}
+.top-tags-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 7px;
+}
+.top-tags-hint { font-weight: 400; color: #9CA3AF; margin-left: 4px; }
+.tags-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag-pill {
+  background: #F3F4F6;
+  color: #374151;
+  border: 1px solid #E5E7EB;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  font-family: inherit;
+}
+.tag-pill:hover          { background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8; }
+.tag-pill--copied        { background: #D1FAE5; border-color: #6EE7B7; color: #065F46; }
+
+/* ── Sortable column header ───────────────────────────────────────────────── */
+.th-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.th-sortable:hover { color: #F56400; }
+.th-active { color: #F56400; }
+
+/* ── High opportunity niche banner ───────────────────────────────────────── */
+.opportunity-banner {
+  background: #FFF3CD;
+  border-bottom: 1px solid #FBBF24;
+  color: #78350F;
+  font-size: 12px;
+  padding: 7px 12px;
+  flex-shrink: 0;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9CA3AF;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.delete-btn:hover { color: #EF4444; }
+
+.save-from-table-btn {
+  background: none;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6B7280;
+  font-size: 11px;
+  padding: 2px 6px;
+  transition: all 0.15s;
+}
+.save-from-table-btn:hover { border-color: #F56400; color: #F56400; }
+.save-from-table-btn.saved { background: #10B981; color: #fff; border-color: #10B981; }
+
+/* ── Settings ────────────────────────────────────────────────────────────────── */
+.settings-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid #E5E7EB;
+}
+.settings-section:last-child { border-bottom: none; }
+.settings-heading {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6B7280;
+  margin-bottom: 8px;
+}
+
+/* ── License status badge ────────────────────────────────────────────────────── */
+.license-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.license-status.licensed {
+  background: #D1FAE5;
+  color: #065F46;
+}
+.license-status.unlicensed {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+.license-status.trial {
+  background: #FFF3CD;
+  color: #92400E;
+}
