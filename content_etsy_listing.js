@@ -356,27 +356,16 @@ function etchspyListing() {
   }
 
   // ── Category-based review rate ──────────────────────────────────────────────
-  // Different listing types have very different review rates. Using a single 4%
-  // for everything systematically over-estimates digital items and under-estimates
-  // highly personalized/custom ones.
+  // Uses the same title-keyword logic as the search page so search badge and
+  // listing panel always agree on the rate for the same listing.
   //
-  //  Digital downloads  → ~2.5%  (low-friction purchase, less emotional investment)
-  //  Personalized/custom → ~8.5% (high emotional investment, buyers leave reviews more)
+  //  Digital downloads   → ~2.5%
+  //  Personalized/custom → ~8.5%
   //  Default physical    → ~4.0%
   function detectReviewRate() {
-    // Primary: read breadcrumb categories (most reliable on listing pages)
-    const crumbEls = document.querySelectorAll(
-      'nav[aria-label*="breadcrumb"] a, [class*="breadcrumb"] a, nav a[href*="/c/"]'
-    );
-    const cats = Array.from(crumbEls).map((el) => el.textContent).join(' ').toLowerCase();
-
-    // Secondary: listing title
-    const title = (document.querySelector('h1')?.textContent || '').toLowerCase();
-
-    const text = cats + ' ' + title;
-
-    if (/\bdigital\b|\bdownload\b|\bprintable\b|\bsvg\b|\bpdf\b|\binstant\b/.test(text)) return 0.025;
-    if (/personali|custom|\bengraved\b|wedding|memorial|sympathy|baby\s*shower|engagement|bespoke/.test(text)) return 0.085;
+    const title = extractTitle().toLowerCase();
+    if (/\bdigital\b|\bdownload\b|\bprintable\b|\bsvg\b|\bpdf\b|\binstant\b/.test(title)) return 0.025;
+    if (/personali|custom|\bengraved\b|wedding|memorial|sympathy|baby\s*shower|engagement|bespoke/.test(title)) return 0.085;
     return 0.04;
   }
 
