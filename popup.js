@@ -213,16 +213,18 @@ function renderResearchTable(list) {
 
     const tr = document.createElement('tr');
     if (item.is_ad) tr.classList.add('row-ad');
+    const rrClass = rowRevClass(item);
+    if (rrClass) tr.classList.add(rrClass);
     tr.innerHTML = `
       <td class="title-cell">
         <a href="${escHtml(item.listing_url)}" target="_blank" title="${escHtml(item.title)}">
-          ${escHtml(truncate(item.title, 38))}
+          ${escHtml(truncate(item.title, 42))}
         </a>${adBadge}
       </td>
       <td class="num-cell">${fmtPrice(item.price)}</td>
       <td class="num-cell">${salesCell}</td>
-      <td class="num-cell">${revCell}</td>
-      <td class="title-cell">${escHtml(truncate(item.shop_name || '—', 18))}</td>
+      <td class="num-cell ${revenueColorClass(item.est_monthly_revenue)}">${revCell}</td>
+      <td class="title-cell">${escHtml(truncate(item.shop_name || '—', 20))}</td>
       <td class="action-cell">
         <button class="delete-btn" data-url="${escHtml(item.listing_url)}" title="Remove">🗑</button>
       </td>
@@ -314,6 +316,17 @@ async function loadCurrentPage() {
     priceStats.textContent = '';
   }
 
+  // ── Revenue summary (Feature 6) — combined organic revenue on this page ──
+  const revSummary = document.getElementById('current-revenue-summary');
+  if (revSummary) {
+    const totalPageRev = organicResults
+      .filter((r) => r.review_count > 0)
+      .reduce((s, r) => s + (r.est_monthly_revenue || 0), 0);
+    revSummary.textContent = totalPageRev > 0
+      ? `Est. page revenue: ~$${Math.round(totalPageRev).toLocaleString()}/mo`
+      : '';
+  }
+
   renderCurrentTable(results);
   wireCurrentPageButtons(results, tab);
 
@@ -373,15 +386,17 @@ function renderCurrentTable(results) {
 
     const tr = document.createElement('tr');
     if (item.is_ad) tr.classList.add('row-ad');
+    const rrClass = rowRevClass(item);
+    if (rrClass) tr.classList.add(rrClass);
     tr.innerHTML = `
       <td class="title-cell">
         <a href="${escHtml(item.listing_url)}" target="_blank" title="${escHtml(item.title)}">
-          ${escHtml(truncate(item.title, 38))}
+          ${escHtml(truncate(item.title, 42))}
         </a>${adBadge}
       </td>
       <td class="num-cell">${fmtPrice(item.price)}</td>
       <td class="num-cell">${salesCell}</td>
-      <td class="num-cell">${revCell}</td>
+      <td class="num-cell ${revenueColorClass(item.est_monthly_revenue)}">${revCell}</td>
       <td class="num-cell">${fmtCount(item.review_count)}</td>
       <td class="action-cell">
         <button class="save-from-table-btn" data-url="${escHtml(item.listing_url)}" title="Save to research list">+</button>
@@ -566,6 +581,23 @@ function fmtCount(n)     { return safeRound(n).toLocaleString(); }
 function fmtRevenue(n)   { return n > 0 ? '~$' + safeRound(n).toLocaleString() : '—'; }
 function fmtSales(n)     { return n > 0 ? '~' + safeRound(n).toLocaleString()  : '—'; }
 function fmtPrice(n)     { return n > 0 ? '$' + Number(n).toFixed(2) : '—'; }
+
+// Revenue colour tier — Feature 3 (Color Coding)
+function revenueColorClass(n) {
+  if (!n || n <= 0) return 'rev-none';
+  if (n >= 1000) return 'rev-high';
+  if (n >= 200)  return 'rev-mid';
+  return 'rev-low';
+}
+
+// Revenue tier class for the table row colour bar
+function rowRevClass(item) {
+  if (item.is_ad || item.review_count === 0) return '';
+  const r = item.est_monthly_revenue || 0;
+  if (r >= 1000) return 'tr-rev-high';
+  if (r >= 200)  return 'tr-rev-mid';
+  return 'tr-rev-low';
+}
 
 // Extract the top N most-frequent meaningful words from listing titles
 // (used as a proxy for tags on search pages, where individual tags aren't shown)

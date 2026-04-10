@@ -142,6 +142,14 @@ function etchspySearch() {
   // ── Safe number formatter (guards against NaN / undefined) ──────────────
   function safeNum(n) { const v = Math.round(n || 0); return isFinite(v) ? v : 0; }
 
+  // Revenue colour for mini-panel text
+  function revenueColorStyle(rev) {
+    if (!rev || rev <= 0) return 'color:rgba(255,255,255,0.4)';
+    if (rev >= 1000) return 'color:#4ADE80';
+    if (rev >= 200)  return 'color:#FCD34D';
+    return 'color:rgba(255,255,255,0.65)';
+  }
+
   // Detect sponsored / ad listings
   function isAdListing(card) {
     if (card.dataset.isAd === 'true') return true;
@@ -290,9 +298,15 @@ function etchspySearch() {
     } else {
       const sales   = safeNum(listing.est_monthly_sales);
       const revenue = safeNum(listing.est_monthly_revenue);
+      const trendHtml = listing.trend === 'up'
+        ? ' <span class="etchspy-trend-up">↑</span>'
+        : listing.trend === 'down'
+        ? ' <span class="etchspy-trend-down">↓</span>'
+        : '';
       badge.innerHTML =
         `<span>📦 ~${sales.toLocaleString()}/mo</span>` +
-        `<span style="margin-left:6px">💰 ~$${revenue.toLocaleString()}/mo</span>`;
+        `<span style="margin-left:6px">💰 ~$${revenue.toLocaleString()}/mo</span>` +
+        trendHtml;
     }
 
     // Mark sponsored listings prominently
@@ -348,6 +362,108 @@ function etchspySearch() {
     }
     fab.textContent = `📊 Export ${pageListings.length} result${pageListings.length !== 1 ? 's' : ''} to CSV`;
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SHOP MINI-PANEL (appears when user clicks a shop name on a search page)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function showShopMiniPanel(shopName, shopUrl, listings, clientX, clientY) {
+    document.getElementById('etchspy-shop-mini')?.remove();
+
+    const totalRevenue = listings.reduce((s, l) => s + (l.est_monthly_revenue || 0), 0);
+    const priced       = listings.filter((l) => l.price > 0);
+    const avgPrice     = priced.length > 0
+      ? priced.reduce((s, l) => s + l.price, 0) / priced.length
+      : 0;
+
+    const escName = shopName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const panel = document.createElement('div');
+    panel.id    = 'etchspy-shop-mini';
+    panel.setAttribute('data-etchspy', 'true');
+
+    panel.innerHTML = `
+      <div class="etchspy-shop-mini-header">
+        <span>📊 ${escName}</span>
+        <button class="etchspy-shop-mini-close" title="Close">✕</button>
+      </div>
+      <div class="etchspy-shop-mini-stats">
+        <div class="etchspy-shop-mini-stat">
+          <span class="etchspy-shop-mini-val">${listings.length}</span>
+          <span class="etchspy-shop-mini-label">on page</span>
+        </div>
+        <div class="etchspy-shop-mini-stat">
+          <span class="etchspy-shop-mini-val" style="${revenueColorStyle(totalRevenue)}">
+            ~$${safeNum(totalRevenue).toLocaleString()}
+          </span>
+          <span class="etchspy-shop-mini-label">est. rev/mo</span>
+        </div>
+        <div class="etchspy-shop-mini-stat">
+          <span class="etchspy-shop-mini-val">$${Number(avgPrice).toFixed(2)}</span>
+          <span class="etchspy-shop-mini-label">avg price</span>
+        </div>
+      </div>
+      <a href="${shopUrl}" class="etchspy-shop-mini-visit" id="etchspy-mini-visit-link">
+        View Shop Analytics →
+      </a>
+    `;
+
+    // Position near cursor, clamp to viewport
+    const PW = 265, PH = 175;
+    let left = clientX + 14;
+    let top  = clientY + 14;
+    if (left + PW > window.innerWidth  - 8) left = clientX - PW - 14;
+    if (top  + PH > window.innerHeight - 8) top  = clientY - PH - 14;
+    panel.style.left = Math.max(8, left) + 'px';
+    panel.style.top  = Math.max(8, top)  + 'px';
+
+    panel.querySelector('.etchspy-shop-mini-close').addEventListener('click', () => panel.remove());
+    panel.querySelector('#etchspy-mini-visit-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      panel.remove();
+      window.open(shopUrl, '_blank');
+    });
+
+    // Auto-dismiss after 9 seconds
+    setTimeout(() => document.getElementById('etchspy-shop-mini')?.remove(), 9000);
+
+    document.body.appendChild(panel);
+  }
+
+  // Delegated click listener — intercept shop-name link clicks inside cards
+  document.addEventListener('click', (e) => {
+    const shopLink = e.target.closest('a[href*="/shop/"]');
+
+    // Dismiss panel on any click that isn't the panel itself
+    if (!shopLink) {
+      if (!e.target.closest('#etchspy-shop-mini')) {
+        document.getElementById('etchspy-shop-mini')?.remove();
+      }
+      return;
+    }
+
+    // Don't intercept links that are already inside our own UI
+    if (shopLink.closest('[data-etchspy]')) return;
+
+    // Must be inside a listing card
+    const inCard = shopLink.closest('[data-listing-id], [class*="listing-card"], .wt-grid__item-xs-6, li');
+    if (!inCard) return;
+
+    const shopMatch = shopLink.href.match(/\/shop\/([^/?#]+)/);
+    if (!shopMatch) return;
+    const rawName = shopMatch[1];
+
+    // Match against shop names we already extracted (normalize spaces)
+    const shopListings = pageListings.filter((l) =>
+      l.shop_name &&
+      l.shop_name.toLowerCase().replace(/\s/g, '') === rawName.toLowerCase()
+    );
+
+    if (shopListings.length > 0) {
+      e.preventDefault();
+      showShopMiniPanel(rawName, shopLink.href, shopListings, e.clientX, e.clientY);
+    }
+  }, true /* capture — fires before Etsy's own handlers */);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // BANNERS
@@ -428,24 +544,39 @@ function etchspySearch() {
 
       const seenUrls = new Set();
 
+      // ── Pass 1: collect data (no badge injection yet) ────────────────────
+      const cardDataPairs = [];
       for (const card of cards) {
-        // Skip any EtchSpy UI elements that accidentally match
         if (card.getAttribute('data-etchspy')) continue;
-
         try {
           const raw     = extractListingData(card);
           const listing = calculateEstimates(raw);
-
-          // Deduplicate — Etsy sometimes shows the same listing in sponsored
-          // and organic positions, which would produce identical entries
           if (listing.listing_url && seenUrls.has(listing.listing_url)) continue;
           if (listing.listing_url) seenUrls.add(listing.listing_url);
-
-          pageListings.push(listing);
-          injectBadge(card, listing);
+          cardDataPairs.push({ card, listing });
         } catch (err) {
           console.warn('[EtchSpy] Error processing card:', err);
         }
+      }
+
+      // ── Trend baseline: average monthly sales of organic listings with reviews ─
+      const velocities = cardDataPairs
+        .filter(({ listing }) => !listing.is_ad && listing.review_count > 0)
+        .map(({ listing }) => listing.est_monthly_sales);
+      const avgMonthly = velocities.length > 0
+        ? velocities.reduce((s, v) => s + v, 0) / velocities.length
+        : 0;
+
+      // ── Pass 2: assign trend + inject badges ─────────────────────────────
+      for (const { card, listing } of cardDataPairs) {
+        if (!listing.is_ad && listing.review_count > 0 && avgMonthly > 0) {
+          const ratio = listing.est_monthly_sales / avgMonthly;
+          listing.trend = ratio >= 1.25 ? 'up' : ratio <= 0.75 ? 'down' : 'neutral';
+        } else {
+          listing.trend = 'neutral';
+        }
+        pageListings.push(listing);
+        injectBadge(card, listing);
       }
 
       // Save to storage so popup can read without messaging

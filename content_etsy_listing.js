@@ -305,6 +305,14 @@ function etchspyListing() {
           <span class="etchspy-stat-value">${fmt(favorites)}</span>
         </div>
         <div class="etchspy-panel-stat">
+          <span class="etchspy-stat-label">Hearts/mo</span>
+          <span class="etchspy-stat-value">${
+            favorites > 0 && listing_age_months > 0
+              ? '~' + fmt(favorites / listing_age_months)
+              : '—'
+          }</span>
+        </div>
+        <div class="etchspy-panel-stat">
           <span class="etchspy-stat-label">Price</span>
           <span class="etchspy-stat-value">${fmtPrice(price)}</span>
         </div>
