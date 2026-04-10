@@ -29,12 +29,15 @@ function etchspyListing() {
       '[itemprop="price"]',
     ],
 
-    // "(1,234 reviews)" link or span near the star rating
+    // "(1,234 reviews)" link or span — prioritise the global total near the star
+    // rating at the top, NOT the per-variant count near the style selector
     reviewsText: [
+      '[data-reviews-count]',
+      'a[href*="#reviews"][class*="reviews"]',
+      '[class*="listing-page-reviews"] a',
+      '[class*="review-count"]',
       'a[href*="#reviews"]',
       '[class*="reviews-section"] a',
-      'span[class*="review-count"]',
-      '[data-reviews-count]',
       'div[class*="stars"] a',
     ],
 
@@ -117,6 +120,61 @@ function etchspyListing() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // JSON-LD STRUCTURED DATA — most reliable source for price + review count
+  // Etsy embeds schema.org Product JSON-LD on every listing page.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function extractFromJsonLd() {
+    try {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      for (const script of scripts) {
+        let data;
+        try { data = JSON.parse(script.textContent); } catch (_) { continue; }
+
+        const items = Array.isArray(data) ? data : [data];
+        for (const item of items) {
+          if (item['@type'] !== 'Product') continue;
+
+          const result = {};
+
+          // Price — prefer lowPrice (for variants), fall back to price
+          const offers = item.offers;
+          if (offers) {
+            const raw = offers.lowPrice ?? offers.price ?? null;
+            if (raw != null) {
+              const val = parseFloat(String(raw).replace(/,/g, ''));
+              if (val > 0) result.price = val;
+            }
+          }
+
+          // Review count — prefer ratingCount (total reviews) over reviewCount
+          const agg = item.aggregateRating;
+          if (agg) {
+            const raw = agg.ratingCount ?? agg.reviewCount ?? null;
+            if (raw != null) {
+              const val = parseInt(String(raw).replace(/,/g, ''), 10);
+              if (val > 0) result.review_count = val;
+            }
+          }
+
+          // Rating value
+          if (agg && agg.ratingValue) {
+            result.rating = parseFloat(agg.ratingValue);
+          }
+
+          if (result.price || result.review_count) {
+            console.log('[EtchSpy listing] JSON-LD hit:', result);
+            return result;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[EtchSpy listing] JSON-LD parse error:', err);
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // DATA EXTRACTION
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -147,14 +205,46 @@ function etchspyListing() {
   }
 
   function extractReviewCount() {
-    const el = queryOne(document, SEL.reviewsText);
-    if (!el) return 0;
-    const text = el.textContent + ' ' + (el.getAttribute('aria-label') || '');
-    // Try k-number parse first (handles "7.3k reviews")
-    const kMatch = text.match(/([\d.]+[kK])/);
-    if (kMatch) return parseKNumber(kMatch[1]);
-    const m = text.match(/[\d,]+/);
-    return m ? parseInt(m[0].replace(/,/g, ''), 10) : 0;
+    // Etsy listing pages show TWO review counts:
+    //   1. The global total (e.g. 2,600) near the star rating at the top
+    //   2. A per-variant count (e.g. 11) inside the style/option selector area
+    // We want the global total, which is always the largest "X reviews" value on the page.
+    // Strategy: find every "X reviews" / "X ratings" / "(Xk)" string in the page text
+    // and take the maximum — review-formatted text won't collide with prices or IDs.
+
+    const candidates = [];
+
+    // Pass 1: explicit selectors (all matching elements, not just the first)
+    for (const sel of SEL.reviewsText) {
+      try {
+        for (const el of document.querySelectorAll(sel)) {
+          const text = el.textContent + ' ' + (el.getAttribute('aria-label') || '');
+          const kMatch = text.match(/([\d.]+[kK])/);
+          if (kMatch) { candidates.push(parseKNumber(kMatch[1])); continue; }
+          const m = text.match(/[\d,]+/);
+          if (m) candidates.push(parseInt(m[0].replace(/,/g, ''), 10));
+        }
+      } catch (_) {}
+    }
+
+    // Pass 2: full-page scan for review-formatted text only
+    // These patterns are specific enough that they won't match prices, IDs, etc.
+    const reviewRe = [
+      /([\d.,]+[kK]?)\s+reviews?/gi,
+      /([\d.,]+[kK]?)\s+ratings?/gi,
+      /\(([\d.,]+[kK]?)\s+reviews?\)/gi,
+    ];
+    const bodyText = document.body.textContent;
+    for (const re of reviewRe) {
+      let m;
+      while ((m = re.exec(bodyText)) !== null) {
+        const n = parseKNumber(m[1]);
+        if (n > 0) candidates.push(n);
+      }
+    }
+
+    const valid = candidates.filter((n) => n > 0);
+    return valid.length > 0 ? Math.max(...valid) : 0;
   }
 
   function extractRating() {
@@ -368,10 +458,13 @@ function etchspyListing() {
         // Don't increment trial count on listing pages — only search pages use the counter
       }
 
-      // Collect all data
-      const review_count       = extractReviewCount();
+      // ── Try JSON-LD first (most accurate), fall back to DOM scraping ────────
+      const jsonLd = extractFromJsonLd();
+
+      const review_count       = jsonLd?.review_count ?? extractReviewCount();
       const listing_age_months = estimateListingAge(review_count);
-      const price              = extractPrice();
+      const price              = jsonLd?.price        ?? extractPrice();
+      const rating             = jsonLd?.rating       ?? extractRating();
       const { est_total_sales, est_monthly_sales, est_monthly_revenue } =
         calculateEstimates(review_count, price, listing_age_months);
 
@@ -381,7 +474,7 @@ function etchspyListing() {
         title:               extractTitle(),
         price,
         review_count,
-        rating:              extractRating(),
+        rating,
         favorites:           extractFavorites(),
         shop_name:           extractShopName(),
         shop_url:            extractShopUrl(),
