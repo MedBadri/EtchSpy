@@ -332,11 +332,17 @@ function etchspyListing() {
   }
 
   // Estimate listing age — exact "Listed on" date first, then review-count tiers.
-  // We intentionally skip broad body-text "X months ago" scanning: Etsy shows
-  // renewal dates (every ~4 months) in that text, which produces wildly wrong ages.
+  // IMPORTANT: Etsy shows the *renewal* date in "Listed on" text, not the original
+  // creation date. We sanity-check it: if the date implies more than 150 reviews/month
+  // it's almost certainly a renewal date, so we ignore it and fall through to tiers.
   function estimateListingAge(reviewCount) {
     const exact = extractListingDate();
-    if (exact !== null) return exact;
+    if (exact !== null) {
+      const impliedRate = exact > 0 ? reviewCount / exact : Infinity;
+      if (impliedRate <= 150) return exact; // plausible — use it
+      // else: renewal date — fall through to tiers
+      console.log(`[EtchSpy listing] Ignoring renewal date (${exact} mo, ${Math.round(impliedRate)} reviews/mo implied)`);
+    }
 
     // Review-count tiers — calibrated to real Etsy listing growth curves.
     // More tiers at the high end since popular listings accumulate reviews over years.
