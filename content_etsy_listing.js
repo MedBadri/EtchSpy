@@ -162,12 +162,9 @@ function etchspyListing() {
             result.rating = parseFloat(agg.ratingValue);
           }
 
-          // Listing creation date → exact age
-          const dateStr = item.datePublished || item.dateCreated;
-          if (dateStr) {
-            const age = _monthsAgo(new Date(dateStr));
-            if (age) result.listing_age_months = age;
-          }
+          // NOTE: intentionally NOT using datePublished/dateCreated from JSON-LD.
+          // Etsy renews listings every ~4 months and resets that field to the renewal
+          // date, not the original listing date — it would always give a wrong age.
 
           if (result.price || result.review_count) {
             console.log('[EtchSpy listing] JSON-LD hit:', result);
@@ -334,21 +331,22 @@ function etchspyListing() {
     return (m > 0 && m < 360) ? m : null;
   }
 
-  // Estimate listing age — exact date first, then body text, then review tiers
+  // Estimate listing age — exact "Listed on" date first, then review-count tiers.
+  // We intentionally skip broad body-text "X months ago" scanning: Etsy shows
+  // renewal dates (every ~4 months) in that text, which produces wildly wrong ages.
   function estimateListingAge(reviewCount) {
     const exact = extractListingDate();
     if (exact !== null) return exact;
 
-    const bodyText    = document.body.textContent;
-    const yearsMatch  = bodyText.match(/(\d+)\s+year/i);
-    const monthsMatch = bodyText.match(/(\d+)\s+month/i);
-    if (yearsMatch)  return parseInt(yearsMatch[1], 10) * 12;
-    if (monthsMatch) return parseInt(monthsMatch[1], 10);
-    // Tiered fallback
-    if (reviewCount <  10)  return 3;
-    if (reviewCount <  100) return 6;
-    if (reviewCount < 1000) return 12;
-    return 18;
+    // Review-count tiers — calibrated to real Etsy listing growth curves.
+    // More tiers at the high end since popular listings accumulate reviews over years.
+    if (reviewCount <    10) return  3;
+    if (reviewCount <   100) return  8;
+    if (reviewCount <   500) return 14;
+    if (reviewCount <  2000) return 24;
+    if (reviewCount <  8000) return 36;
+    if (reviewCount < 20000) return 54;
+    return 72; // 6 years — realistic for 20k+ review listings
   }
 
   // ── Category-based review rate ──────────────────────────────────────────────

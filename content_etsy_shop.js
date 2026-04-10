@@ -162,16 +162,16 @@ function etchspyShop() {
       catch (_) { listing_url = urlEl.href || ''; }
     }
 
-    // Estimate age from text, then tier fallback
-    const ageText = card.textContent;
-    let listing_age_months = 12;
-    const ym = ageText.match(/(\d+)\s+year/i);
-    const mm = ageText.match(/(\d+)\s+month/i);
-    if (ym) listing_age_months = parseInt(ym[1], 10) * 12;
-    else if (mm) listing_age_months = parseInt(mm[1], 10);
-    else if (review_count < 10)   listing_age_months = 3;
-    else if (review_count < 100)  listing_age_months = 6;
-    else if (review_count >= 1000) listing_age_months = 18;
+    // Estimate age via review-count tiers (body text scanning is unreliable
+    // due to Etsy renewal dates appearing as "X months ago" on card text)
+    let listing_age_months;
+    if      (review_count <    10) listing_age_months =  3;
+    else if (review_count <   100) listing_age_months =  8;
+    else if (review_count <   500) listing_age_months = 14;
+    else if (review_count <  2000) listing_age_months = 24;
+    else if (review_count <  8000) listing_age_months = 36;
+    else if (review_count < 20000) listing_age_months = 54;
+    else                           listing_age_months = 72;
 
     const reviewRate          = _detectReviewRate(title);
     const est_total_sales     = review_count / reviewRate;

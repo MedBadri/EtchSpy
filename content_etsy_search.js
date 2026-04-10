@@ -229,18 +229,17 @@ function etchspySearch() {
     return 'Unknown title';
   }
 
-  // Estimate listing age from visible "X ago" text, falling back to review-count tiers
+  // Estimate listing age — review-count tiers calibrated to real Etsy growth curves.
+  // We skip card body-text scanning: Etsy injects renewal/recency text ("renewed
+  // 1 month ago") that causes far more wrong hits than correct ones.
   function estimateListingAge(card, reviewCount) {
-    const text = card.textContent;
-    const yearsMatch  = text.match(/(\d+)\s+year/i);
-    const monthsMatch = text.match(/(\d+)\s+month/i);
-    if (yearsMatch)  return parseInt(yearsMatch[1], 10) * 12;
-    if (monthsMatch) return parseInt(monthsMatch[1], 10);
-    // Tiered fallback based on review count
-    if (reviewCount <  10)  return 3;
-    if (reviewCount <  100) return 6;
-    if (reviewCount < 1000) return 12;
-    return 18;
+    if (reviewCount <    10) return  3;
+    if (reviewCount <   100) return  8;
+    if (reviewCount <   500) return 14;
+    if (reviewCount <  2000) return 24;
+    if (reviewCount <  8000) return 36;
+    if (reviewCount < 20000) return 54;
+    return 72;
   }
 
   function extractListingData(card) {
