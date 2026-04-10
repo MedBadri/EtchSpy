@@ -259,15 +259,26 @@ function etchspySearch() {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SALES ESTIMATES
-  // Industry assumption: ~4% of buyers leave a review on Etsy
+  // Review rates vary significantly by category:
+  //   Digital/downloads  → ~2.5%  (low friction, less emotional investment)
+  //   Personalized/custom → ~8.5% (high emotional investment, buyers review more)
+  //   Default physical    → ~4.0%
   // ═══════════════════════════════════════════════════════════════════════════
 
-  function calculateEstimates(data) {
-    const reviews = data.review_count || 0;
-    const price   = data.price || 0;
-    const age     = data.listing_age_months || 12;
+  function detectListingReviewRate(title) {
+    const t = (title || '').toLowerCase();
+    if (/\bdigital\b|\bdownload\b|\bprintable\b|\bsvg\b|\bpdf\b|\binstant\b/.test(t)) return 0.025;
+    if (/personali|custom|\bengraved\b|wedding|memorial|sympathy|baby\s*shower|engagement|bespoke/.test(t)) return 0.085;
+    return 0.04;
+  }
 
-    const est_total_sales     = reviews / 0.04;
+  function calculateEstimates(data) {
+    const reviews    = data.review_count || 0;
+    const price      = data.price || 0;
+    const age        = data.listing_age_months || 12;
+    const reviewRate = detectListingReviewRate(data.title);
+
+    const est_total_sales     = reviews / reviewRate;
     const est_monthly_sales   = age > 0 ? est_total_sales / age : 0;
     const est_monthly_revenue = est_monthly_sales * price;
 

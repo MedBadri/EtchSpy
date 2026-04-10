@@ -84,6 +84,13 @@ function etchspyShop() {
   }
 
   function safeNum(n)    { const v = Math.round(n || 0); return isFinite(v) ? v : 0; }
+
+  function _detectReviewRate(title) {
+    const t = (title || '').toLowerCase();
+    if (/\bdigital\b|\bdownload\b|\bprintable\b|\bsvg\b|\bpdf\b|\binstant\b/.test(t)) return 0.025;
+    if (/personali|custom|\bengraved\b|wedding|memorial|sympathy|baby\s*shower|engagement|bespoke/.test(t)) return 0.085;
+    return 0.04;
+  }
   function fmt(n)        { return safeNum(n).toLocaleString(); }
   function fmtD(n)       { return n > 0 ? '$' + safeNum(n).toLocaleString() : '—'; }
   function fmtPrice(n)   { return n > 0 ? '$' + Number(n).toFixed(2) : '—'; }
@@ -166,7 +173,8 @@ function etchspyShop() {
     else if (review_count < 100)  listing_age_months = 6;
     else if (review_count >= 1000) listing_age_months = 18;
 
-    const est_total_sales     = review_count / 0.04;
+    const reviewRate          = _detectReviewRate(title);
+    const est_total_sales     = review_count / reviewRate;
     const est_monthly_sales   = listing_age_months > 0 ? est_total_sales / listing_age_months : 0;
     const est_monthly_revenue = est_monthly_sales * price;
 

@@ -162,6 +162,13 @@ function etchspyListing() {
             result.rating = parseFloat(agg.ratingValue);
           }
 
+          // Listing creation date → exact age
+          const dateStr = item.datePublished || item.dateCreated;
+          if (dateStr) {
+            const age = _monthsAgo(new Date(dateStr));
+            if (age) result.listing_age_months = age;
+          }
+
           if (result.price || result.review_count) {
             console.log('[EtchSpy listing] JSON-LD hit:', result);
             return result;
@@ -296,8 +303,42 @@ function etchspyListing() {
     return !!queryOne(document, SEL.bestsellerBadge);
   }
 
-  // Estimate listing age from page text first, then review-count tiers
+  // ── Exact listing date extraction ──────────────────────────────────────────
+  // Returns age in months if a concrete date is found, otherwise null.
+  function extractListingDate() {
+    const body = document.body.textContent;
+
+    // "Listed on Dec 4, 2019" or "Listed on December 4, 2019"
+    const full = body.match(/[Ll]isted\s+on\s+([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+    if (full) {
+      const d = new Date(`${full[1]} ${full[2]}, ${full[3]}`);
+      const age = _monthsAgo(d);
+      if (age) return age;
+    }
+
+    // "Listed on Dec 2019" or "Listed on December 2019"
+    const monthYear = body.match(/[Ll]isted\s+on\s+([A-Za-z]+)\s+(\d{4})/);
+    if (monthYear) {
+      const d = new Date(`${monthYear[1]} 1, ${monthYear[2]}`);
+      const age = _monthsAgo(d);
+      if (age) return age;
+    }
+
+    return null;
+  }
+
+  function _monthsAgo(date) {
+    if (!date || isNaN(date.getTime())) return null;
+    const now = new Date();
+    const m = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
+    return (m > 0 && m < 360) ? m : null;
+  }
+
+  // Estimate listing age — exact date first, then body text, then review tiers
   function estimateListingAge(reviewCount) {
+    const exact = extractListingDate();
+    if (exact !== null) return exact;
+
     const bodyText    = document.body.textContent;
     const yearsMatch  = bodyText.match(/(\d+)\s+year/i);
     const monthsMatch = bodyText.match(/(\d+)\s+month/i);
@@ -310,12 +351,37 @@ function etchspyListing() {
     return 18;
   }
 
+  // ── Category-based review rate ──────────────────────────────────────────────
+  // Different listing types have very different review rates. Using a single 4%
+  // for everything systematically over-estimates digital items and under-estimates
+  // highly personalized/custom ones.
+  //
+  //  Digital downloads  → ~2.5%  (low-friction purchase, less emotional investment)
+  //  Personalized/custom → ~8.5% (high emotional investment, buyers leave reviews more)
+  //  Default physical    → ~4.0%
+  function detectReviewRate() {
+    // Primary: read breadcrumb categories (most reliable on listing pages)
+    const crumbEls = document.querySelectorAll(
+      'nav[aria-label*="breadcrumb"] a, [class*="breadcrumb"] a, nav a[href*="/c/"]'
+    );
+    const cats = Array.from(crumbEls).map((el) => el.textContent).join(' ').toLowerCase();
+
+    // Secondary: listing title
+    const title = (document.querySelector('h1')?.textContent || '').toLowerCase();
+
+    const text = cats + ' ' + title;
+
+    if (/\bdigital\b|\bdownload\b|\bprintable\b|\bsvg\b|\bpdf\b|\binstant\b/.test(text)) return 0.025;
+    if (/personali|custom|\bengraved\b|wedding|memorial|sympathy|baby\s*shower|engagement|bespoke/.test(text)) return 0.085;
+    return 0.04;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // ESTIMATES
   // ═══════════════════════════════════════════════════════════════════════════
 
-  function calculateEstimates(reviews, price, ageMonths) {
-    const est_total_sales     = reviews / 0.04;
+  function calculateEstimates(reviews, price, ageMonths, reviewRate = 0.04) {
+    const est_total_sales     = reviews / reviewRate;
     const est_monthly_sales   = ageMonths > 0 ? est_total_sales / ageMonths : 0;
     const est_monthly_revenue = est_monthly_sales * price;
     return { est_total_sales, est_monthly_sales, est_monthly_revenue };
@@ -461,12 +527,14 @@ function etchspyListing() {
       // ── Try JSON-LD first (most accurate), fall back to DOM scraping ────────
       const jsonLd = extractFromJsonLd();
 
-      const review_count       = jsonLd?.review_count ?? extractReviewCount();
-      const listing_age_months = estimateListingAge(review_count);
-      const price              = jsonLd?.price        ?? extractPrice();
-      const rating             = jsonLd?.rating       ?? extractRating();
+      const review_count       = jsonLd?.review_count      ?? extractReviewCount();
+      const listing_age_months = jsonLd?.listing_age_months ?? estimateListingAge(review_count);
+      const price              = jsonLd?.price              ?? extractPrice();
+      const rating             = jsonLd?.rating             ?? extractRating();
+      const reviewRate         = detectReviewRate();
+
       const { est_total_sales, est_monthly_sales, est_monthly_revenue } =
-        calculateEstimates(review_count, price, listing_age_months);
+        calculateEstimates(review_count, price, listing_age_months, reviewRate);
 
       const listingUrl = window.location.href.split('?')[0]; // strip query params
 
