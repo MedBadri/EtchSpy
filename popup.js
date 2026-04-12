@@ -265,7 +265,7 @@ async function loadCurrentPage() {
     return;
   }
 
-  const isSearchPage = tab.url && tab.url.includes('etsy.com/search');
+  const isSearchPage = tab.url && /etsy\.com(\/[a-z]{2}(-[a-z]{2,4})?)?\/search/i.test(tab.url);
 
   if (!isSearchPage) {
     notEtsy.classList.remove('hidden');
@@ -277,7 +277,7 @@ async function loadCurrentPage() {
   // Try to get live results from the content script
   let results = [];
   try {
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_RESULTS' });
+    const response = await sendMessageWithTimeout(tab.id, { type: 'GET_PAGE_RESULTS' }, 3000);
     if (response && Array.isArray(response.results)) {
       results = response.results;
     }
@@ -440,9 +440,17 @@ function wireCurrentPageButtons(results, tab) {
     newRefresh.disabled = true;
     newRefresh.textContent = '↺ Refreshing…';
     try {
-      await chrome.tabs.sendMessage(tab.id, { type: 'REFRESH_ANALYSIS' });
-    } catch (_) {}
-    await loadCurrentPage();
+      await sendMessageWithTimeout(tab.id, { type: 'REFRESH_ANALYSIS' }, 3000);
+      await loadCurrentPage();
+    } catch (_) {
+      // Content script unreachable — show friendly error
+      const noResults = document.getElementById('current-no-results');
+      const tableWrap = document.getElementById('current-table-wrap');
+      tableWrap.classList.add('hidden');
+      noResults.classList.remove('hidden');
+      noResults.textContent =
+        'Could not connect to page. Make sure you\'re on an Etsy search page and try refreshing the Etsy page first.';
+    }
     newRefresh.disabled = false;
     newRefresh.textContent = '↺ Refresh';
   });
@@ -623,6 +631,22 @@ function extractTopKeywords(listings, topN = 8) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, topN)
     .map(([word, count]) => ({ word, count }));
+}
+
+// Send a message to a tab's content script with a timeout
+// Rejects with an error if no response within `ms` milliseconds
+function sendMessageWithTimeout(tabId, message, ms = 3000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    chrome.tabs.sendMessage(tabId, message, (response) => {
+      clearTimeout(timer);
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(response);
+      }
+    });
+  });
 }
 
 function maskKey(key) {

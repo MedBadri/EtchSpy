@@ -10,19 +10,28 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.etsy.com/search*"],
+      "matches": [
+        "https://www.etsy.com/search*",
+        "https://www.etsy.com/*/search*"
+      ],
       "js": ["storage.js", "license.js", "csv_export.js", "content_etsy_search.js"],
       "css": ["styles/overlay.css"],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://www.etsy.com/listing/*"],
+      "matches": [
+        "https://www.etsy.com/listing/*",
+        "https://www.etsy.com/*/listing/*"
+      ],
       "js": ["storage.js", "license.js", "csv_export.js", "content_etsy_listing.js"],
       "css": ["styles/overlay.css"],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://www.etsy.com/shop/*"],
+      "matches": [
+        "https://www.etsy.com/shop/*",
+        "https://www.etsy.com/*/shop/*"
+      ],
       "js": ["storage.js", "license.js", "csv_export.js", "content_etsy_shop.js"],
       "css": ["styles/overlay.css"],
       "run_at": "document_idle"

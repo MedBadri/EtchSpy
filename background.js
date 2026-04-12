@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // send GET_PAGE_RESULTS messages without having to query tabs itself.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
-    if (tab.url.includes('etsy.com/search') || tab.url.includes('etsy.com/listing')) {
+    if (/etsy\.com(\/[a-z]{2}(-[a-z]{2,4})?)?\/(?:search|listing)/i.test(tab.url)) {
       chrome.storage.local.set({
         last_etsy_tab_id: tabId,
         last_etsy_tab_url: tab.url,
